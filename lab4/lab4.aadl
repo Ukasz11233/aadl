@@ -1,0 +1,54 @@
+package lab4
+public
+	with Data_Model;
+	with Base_Types;
+
+	data Temperature
+		properties
+			Data_Model::Data_Representation => Integer;
+	end Temperature;
+
+--	data HeaterControlType
+--		properties
+--			Data_Model::Data_Representation => Boolean;
+--	end HeaterControlType;
+
+	device TempSensor
+		features
+			Temp: out data port Temperature;
+	end TempSensor;
+
+	device Heater
+		features
+			Control: in data port Base_Types::Boolean;
+	end Heater;
+
+	thread ControlLogic
+		features
+			Temp: in data port Temperature;
+			HeaterControl: out data port Base_Types::Boolean;
+	end ControlLogic;
+
+	thread HeaterController
+		features
+			Control: in data port Base_Types::Boolean;
+	end HeaterController;
+
+
+	thread TemperatureReader
+		features
+			Temp: out data port Temperature;
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 100ms;
+	end TemperatureReader;
+
+end lab4;
+
+--Taka kolejnosc:
+--data
+--device
+--watek
+--proces
+--system
+			

@@ -1,0 +1,112 @@
+package prod_kons_part3_flows
+public
+	with Base_Types; -- np. Base_Types::Integer
+
+system Prod_Consum
+end Prod_Consum;
+ 
+system implementation Prod_Consum.impl
+  subcomponents
+    producer : process producer.impl;
+    consumer: process consumer.impl;
+    main_processor: processor MainProcessor;
+    slave_processor: processor SlaveProcessor;
+    pci_bus : bus pci;
+    
+	connections
+	producer_consumer_conn : port producer.data_out -> consumer.data_in;
+		
+	pci_master: bus access pci_bus -> main_processor.pci;
+	pci_slave: bus access pci_bus -> slave_processor.pci;
+	 
+end Prod_Consum.impl;
+
+----------------- THREADS -----------------
+
+thread producer_task
+	features    
+		Data_Out : out data port Base_Types::Character;
+	flows
+		flow_src : flow source Data_Out;
+  	properties
+	    Dispatch_Protocol => Periodic;
+	    Dispatch_Offset => 	2ms;
+	    Deadline => 15ms;	
+	    Period => 20ms;
+	    Compute_Execution_Time => 0ms..2ms;
+end producer_task;
+ 
+thread implementation producer_task.impl
+end producer_task.impl;
+
+thread consumer_task
+  features
+    Data_In : in data port Base_Types::Character;
+    
+	flows
+		flow_dest : flow sink Data_In;
+	properties
+		Dispatch_Protocol => Aperiodic;
+		Compute_Execution_Time => 1ms..4ms;
+end consumer_task;
+
+thread implementation consumer_task.impl
+end consumer_task.impl;
+ 
+ 
+ --------------------- PROCESS -------------------
+ 
+process producer
+	features 
+		data_out : out data port Base_Types::Character;
+end producer;
+ 
+process implementation producer.impl
+   subcomponents
+     producer_thread : thread producer_task;
+	connections
+		new_data : port producer_thread.Data_Out -> data_out;
+	flows
+ 		flow_source : flow source producer_thread.flow_src -> new_data -> data_out;  -- TODO do ogarniecia jebany flow   
+end producer.impl;
+
+
+process consumer
+	features
+		data_in : in data port Base_Types::Character;
+end consumer;
+
+process implementation consumer.impl
+	subcomponents
+		consumer_thread: thread consumer_task.impl;
+	connections
+		new_data_in : port data_in -> consumer_thread.Data_In;
+end consumer.impl;
+
+----------------------- PROCESSOR ----------------------
+
+processor MainProcessor
+	features
+		pci : requires bus access pci;
+end MainProcessor;
+
+processor implementation MainProcessor.impl
+end MainProcessor.impl;
+
+processor SlaveProcessor
+	features
+		pci : requires bus access pci;
+end SlaveProcessor;
+
+processor implementation SlaveProcessor.impl
+end SlaveProcessor.impl;
+
+----------------- BUS ----------------------
+bus pci
+end pci;
+
+bus implementation pci.impl
+end pci.impl;
+
+
+end prod_kons_part3_flows;

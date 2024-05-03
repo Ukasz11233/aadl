@@ -1,0 +1,58 @@
+package producent_konsument
+public
+	with Base_Types; -- np. Base_Types::Integer
+
+system Prod_Consum
+end Prod_Consum;
+ 
+system implementation Prod_Consum.impl
+  subcomponents
+    main : process Main_Process.impl;
+    
+end Prod_Consum.impl;
+
+----------------- THREADS -----------------
+
+thread producer
+  features
+    new_data : out data port Base_Types::Integer;
+  properties
+    Dispatch_Protocol => Periodic;
+    Dispatch_Offset => 	2ms;
+    Deadline => 15ms;	
+    Period => 20ms;
+    Compute_Execution_Time => 0ms..2ms;	
+end producer;
+ 
+thread implementation producer.impl
+end producer.impl;
+
+thread consumer
+	features
+		new_data : in data port Base_types::Integer;
+	properties
+		Dispatch_Protocol => Aperiodic;
+		Compute_Execution_Time => 1ms..3ms;
+end consumer;
+
+thread implementation consumer.impl
+end consumer.impl;
+ 
+ 
+ --------------------- PROCESS -------------------
+ 
+process Main_Process		
+end Main_Process;
+ 
+process implementation Main_Process.impl
+   subcomponents
+     producer_thread : thread producer.impl;
+     consumer_thread : thread consumer.impl;
+    
+	connections
+		producer_consumer_conn : port producer_thread.new_data -> consumer_thread.new_data;
+end Main_Process.impl;
+
+
+end producent_konsument;
+

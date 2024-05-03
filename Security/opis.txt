@@ -1,0 +1,3 @@
+System zawiera 4 urzadzenia. Czujnik ruchu, czujnik pola magentycznego, kamera i alarm. 
+Zawiera 1 proces. 
+Gdy czujnik ruchu lub magnetyczny aktywuje sie, wysyla sygnal do procesu, ktory nastepnie uruchamia kamere i alarm 

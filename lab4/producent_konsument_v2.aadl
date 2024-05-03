@@ -1,0 +1,90 @@
+package producent_konsument_v2
+public
+	with Base_Types; -- np. Base_Types::Integer
+
+system Prod_Consum
+end Prod_Consum;
+ 
+system implementation Prod_Consum.impl
+  subcomponents
+    process1 : process proc.impl;
+    process2: process proc2.impl;
+    main_processor: processor MainProcessor;
+    slave_processor: processor SlaveProcessor;
+    spi_bus : bus spi;
+    
+	connections
+	spi_master: bus access spi_bus -> main_processor.spi;
+	spi_slave: bus access spi_bus -> slave_processor.spi;
+end Prod_Consum.impl;
+
+----------------- THREADS -----------------
+
+thread task
+  features
+    Data1 : in data port Base_Types::Character; -- np. Base_Types::Character;
+  properties
+    Dispatch_Protocol => Periodic;
+    Dispatch_Offset => 	2ms;
+    Deadline => 15ms;	
+    Period => 20ms;
+    Compute_Execution_Time => 0ms..2ms;	
+end task;
+ 
+thread implementation task.impl
+end task.impl;
+
+thread consument
+end consument;
+
+thread implementation consument.impl
+end consument.impl;
+ 
+ 
+ --------------------- PROCESS -------------------
+ 
+process proc
+end proc;
+ 
+process implementation proc.impl
+   subcomponents
+     task1 : thread task.impl;
+end proc.impl;
+
+
+process proc2
+end proc2;
+
+process implementation proc2.impl
+	subcomponents
+		consument_thread: thread consument;
+end proc2.impl;
+
+----------------------- PROCESSOR ----------------------
+
+processor MainProcessor
+	features
+		spi : requires bus access spi;
+end MainProcessor;
+
+processor implementation MainProcessor.impl
+end MainProcessor.impl;
+
+processor SlaveProcessor
+	features
+		spi : requires bus access spi;
+end SlaveProcessor;
+
+processor implementation SlaveProcessor.impl
+end SlaveProcessor.impl;
+
+----------------- BUS ----------------------
+bus spi
+end spi;
+
+bus implementation spi.impl
+end spi.impl;
+
+
+end producent_konsument_v2;
+
