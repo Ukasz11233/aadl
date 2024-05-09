@@ -1,0 +1,93 @@
+package TempReader
+public
+	with DataTypes;
+	renames DataTypes::all;
+	
+	
+------------------ SYSTEM -----------------------
+	system TemperatureReaderSystem
+		features
+			temp_out : out data port TemperatureType;
+			
+		flows
+			temp_src : flow source temp_out;
+	end TemperatureReaderSystem;
+	
+	system implementation TemperatureReaderSystem.impl
+		subcomponents
+			this_temp_sensor : device TemperatureSensor;
+			this_temp_process : process TempProcess.with_thread;
+			this_processor: processor TemperatureProcessor;
+			this_bus : bus SPI;
+		connections
+			temp_sensor_temp_process_conn: port this_temp_sensor.temp_out -> this_temp_process.temp_in;
+			temp_process_out_conn : port this_temp_process.temp_out -> temp_out;
+			
+			bus_temp_sensor : bus access  this_temp_sensor.SPI_access -> this_bus;
+			bus_processor : bus access this_bus -> this_processor.SPI_access;
+			
+		flows
+			e2e_temp_flow : end to end flow this_temp_sensor.temp_src -> temp_sensor_temp_process_conn -> this_temp_process.temp_flow;
+	end TemperatureReaderSystem.impl;
+	
+
+------------------ PROCESSOR ---------------------
+
+	processor TemperatureProcessor
+		features
+			SPI_access: requires bus access SPI;
+	end TemperatureProcessor;
+	
+	
+------------------- BUS --------------------------
+	bus SPI
+	end SPI;
+	
+------------------- PROCESS ----------------------
+
+	process TempProcess
+		features
+			temp_in: in data port TemperatureType;
+			temp_out: out data port TemperatureType;
+			
+		flows
+			temp_flow : flow path temp_in -> temp_out;
+	end TempProcess;
+	
+	process implementation TempProcess.with_thread
+		subcomponents
+			this_thread : thread TemperatureReader;
+		
+		connections
+			temp_read_conn: port temp_in -> this_thread.temp_in;
+			temp_out_conn: port this_thread.temp_out -> temp_out;
+	end TempProcess.with_thread;
+	
+
+------------------- THREAD -----------------------
+
+	thread TemperatureReader	
+			features
+				temp_in: in data port TemperatureType;
+				temp_out : out data port TemperatureType;
+			properties
+				Dispatch_Protocol => Periodic;
+				Dispatch_Offset => 1ms;
+				Deadline => 5ms;
+				Period => 10ms;
+				Compute_Execution_Time => 0ms .. 1ms;
+	end TemperatureReader;
+	
+
+------------------ DEVICE ------------------------
+
+	device TemperatureSensor
+		features
+			temp_out: out data port TemperatureType;
+			spi_access: requires bus access SPI;
+		flows
+			temp_src: flow source temp_out;
+	end TemperatureSensor;
+
+
+end TempReader;

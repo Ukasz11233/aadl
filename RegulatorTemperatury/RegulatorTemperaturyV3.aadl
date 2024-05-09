@@ -1,0 +1,218 @@
+package RegulatorTemperaturyV3
+public
+	with Base_Types;
+	with Data_Model;
+
+
+----------------------- DATA TYPES ----------------------------
+
+	data TemperatureType
+		properties
+			Data_Model::Data_Representation => Integer;
+	end TemperatureType;
+	
+	data TurnOnOffType
+		properties
+			Data_Model::Data_Representation => Boolean;
+	end TurnOnOffType;
+	
+	
+	-------------------- SYSTEM -------------------------------
+	
+	system TemperatureRegulatorSystem
+	end TemperatureRegulatorSystem;
+
+	system implementation TemperatureRegulatorSystem.with_devices
+		subcomponents
+			this_heater: device Heater;
+			this_temp_sensor: device TemperatureSensor;
+			this_controller: process Controller;
+			this_cooler: device Cooler;
+			this_display: device Display;
+			this_main_processor : processor MainProcessor;
+			this_bus : bus SPI;
+			this_mem_bus : bus mem_bus;
+						
+		connections
+			temp_sensor_conn: port this_temp_sensor.temp_out -> this_controller.temp_in;
+			heater_conn: port this_controller.turn_on_off_heater -> this_heater.turn_on_off;
+			cooler_conn: port this_controller.turn_on_off_cooler -> this_cooler.turn_on_off;
+	
+			display_temp_conn: port this_temp_sensor.temp_out -> this_display.data_in;
+			set_temp_conn: port this_display.data_out -> this_controller.temp_goal;
+			
+			-- BUS CONNECTIONS --
+			bus_heater : bus access this_bus -> this_heater.SPI_access;
+			bus_temp_sensor: bus access this_bus -> this_temp_sensor.SPI_access;
+			bus_main_processor: bus access this_bus -> this_main_processor.SPI_access;
+			bus_cooler: bus access this_bus -> this_cooler.SPI_access;
+			bus_dispaly : bus access this_bus -> this_display.SPI_access;
+			
+			bus_mem_proc: bus access  this_mem_bus -> this_main_processor.mem_access;
+			
+	end TemperatureRegulatorSystem.with_devices;
+
+
+------------------- PPROCESSOR -----------------------------------------
+
+processor MainProcessor 
+	features
+		SPI_access : requires bus access SPI;
+		mem_access: requires bus access mem_bus;
+end MainProcessor;
+
+processor implementation MainProcessor.impl
+end MainProcessor.impl;
+
+
+------------------ BUS ---------------------------------------------
+
+bus SPI
+end SPI;
+
+bus implementation SPI.impl
+end SPI.impl;
+
+
+bus mem_bus
+end mem_bus;
+
+--------------------- MEMORY -------------------------------
+memory RAM
+	features
+		bus01: requires bus access mem_bus;
+end RAM;
+
+----------------------- PROCESSESS ------------------------------
+
+
+	process Controller
+		features
+			temp_in : in data port TemperatureType;
+			temp_goal: in data port TemperatureType;
+			turn_on_off_heater : out data port TurnOnOffType;
+			turn_on_off_cooler: out data port TurnOnOffType;
+	end Controller;
+	
+	process implementation Controller.with_threads
+		subcomponents
+			this_temperature_reader : thread TemperatureReader;
+			this_calculate : thread Calculate;
+			this_heater_switch: thread HeaterSwitch;
+			this_cooler_switch: thread CoolerSwitch;
+		connections
+			temp_read_conn : port temp_in -> this_temperature_reader.temp_in;  -- otrzymuje temp z czujnika i przesylam do watku
+			
+			control_in_conn : port temp_in -> this_calculate.temp_in;  -- otrzymuje temp z czujnika i przesylam do watku kalkulatora sterowania
+			heater_control_on_off_conn: port this_calculate.turn_on_off_heater -> this_heater_switch.heater_switch_in; -- przesylam do drugiego watku
+			
+			heater_switch_conn : port this_heater_switch.heater_switch_out -> turn_on_off_heater;			
+			
+			cooler_control_on_off_conn: port this_calculate.turn_on_off_cooler -> this_cooler_switch.cooler_switch_in;
+			cooler_swtich_conn : port this_cooler_switch.cooler_switch_out -> turn_on_off_cooler;
+			
+			temp_goal_conn : port temp_goal -> this_calculate.temp_goal;
+	end Controller.with_threads;
+	
+	
+----------------------- THREADS ----------------------------------
+	
+	thread TemperatureReader
+		features
+			temp_in : in data port TemperatureType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 5ms;
+			Period => 10ms;
+			Compute_Execution_Time => 0ms..1ms;
+	end TemperatureReader;
+	
+	thread implementation TemperatureReader.impl
+	end TemperatureReader.impl;
+	
+	
+	thread Calculate
+		features
+			temp_in : in data port TemperatureType;
+			temp_goal: in data port TemperatureType;
+			turn_on_off_heater: out data port TurnOnOffType;
+			turn_on_off_cooler : out data port TurnOnOffType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 10ms;
+			Period => 15ms;
+			Compute_Execution_Time => 0ms..1ms;
+	end Calculate;
+	
+	thread implementation Calculate.impl
+	end Calculate.impl;
+	
+	-- zamysl jest taki, zeby co 30 sekund bral info o temperaturze (info od thread Calculatenp jest buforowane)
+	
+	thread HeaterSwitch
+		features
+			heater_switch_in : in data port TurnOnOffType;
+			heater_switch_out : out data port TurnOnOffType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 20ms;
+			Period => 30000ms; -- 30 sekund
+			Compute_Execution_Time => 0ms..1ms;
+	end HeaterSwitch;
+	
+	thread implementation HeaterSwitch.impl
+	end HeaterSwitch.impl;
+	
+	thread CoolerSwitch
+		features
+			cooler_switch_in : in data port TurnOnOffType;
+			cooler_switch_out : out data port TurnOnOffType;
+	end CoolerSwitch;
+
+------------------------ DEVICES ---------------------------------
+ 
+	device Heater
+		features
+			turn_on_off : in data port TurnOnOffType; -- wlaczanie/wylaczanie grzejnika
+			spi_access : requires bus access SPI;
+	end Heater;
+
+	device implementation Heater.impl
+	end Heater.impl;
+
+
+
+	device TemperatureSensor
+		features
+			temp_out : out data port TemperatureType;
+			spi_access : requires bus access SPI;
+	end TemperatureSensor;
+
+	device implementation TemperatureSensor.impl
+	end TemperatureSensor.impl;
+
+	
+	device Cooler
+		features 
+			turn_on_off: in data port TurnOnOffType;
+			spi_access : requires bus access SPI;
+	end Cooler;
+	
+	device implementation Cooler.impl
+	end Cooler.impl;
+	
+	
+	device Display
+		features
+			data_in: in data port TemperatureType;
+			data_out: out data port TemperatureType;
+			spi_access : requires bus access SPI;
+	end Display;
+	
+	device implementation Display.impl
+	end Display.impl;
+
+end RegaulatorTemperaturyV3;

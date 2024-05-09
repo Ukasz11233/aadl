@@ -1,0 +1,14 @@
+package DataTypes
+public
+	with Data_Model;
+
+	data TemperatureType
+		properties
+			Data_Model::Data_Representation => Integer;
+	end TemperatureType;
+
+	data TurnOnOffType
+		properties
+			Data_Model::Data_Representation => Boolean;
+	end TurnOnOffType;
+end DataTypes;

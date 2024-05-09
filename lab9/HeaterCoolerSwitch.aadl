@@ -1,0 +1,111 @@
+package HeaterCoolerSwitch
+public
+	with DataTypes;
+	renames DataTypes::all;
+	
+	------------ SYSTEM -----------------
+	system HeaterCoolerSwitchSystem
+		features
+			heater_in_sig: in data port TurnOnOffType;
+			cooler_in_sig: in data port TurnOnOffType;
+			
+		flows
+			heater_sink : flow sink heater_in_sig;
+			cooler_sink : flow sink cooler_in_sig;
+	end HeaterCoolerSwitchSystem;
+	
+	system implementation HeaterCoolerSwitchSystem.impl
+		subcomponents
+			heater : device Heater;
+			cooler : device Cooler;
+			bus_spi : bus SPI;
+			main_processor : processor SwitchProcessor;
+			switch_process : process SwitchProcess;
+			ram : memory RAM;
+		connections
+			heater_in_switch_process : port heater_in_sig -> switch_process.heater_in_sig;
+			cooler_in_switch_process : port cooler_in_sig -> switch_process.cooler_in_sig;
+			switch_process_heater : port switch_process.heater_out_sig -> heater.turn_on_off;
+			switch_process_cooler : port switch_process.cooler_out_sig -> cooler.turn_on_off;
+			
+			main_processor_bus_spi : bus access  main_processor.SPI_access <-> bus_spi;
+			ram_bus_spi : bus access ram.spi <-> bus_spi;
+	end HeaterCoolerSwitchSystem.impl;
+	
+	
+	------------ PROCESSOR ----------------
+	
+	processor SwitchProcessor
+		features
+			SPI_access: requires bus access SPI;
+	end SwitchProcessor;
+	
+	
+	----------- PROCESS -------------------
+	
+	process SwitchProcess
+		features
+			heater_in_sig : in data port TurnOnOffType;
+			cooler_in_sig : in data port TurnOnOffType;
+			heater_out_sig : out data port TurnOnOffType;
+			cooler_out_sig : out data port TurnOnOffType;
+	end SwitchProcess;
+	
+	process implementation SwitchProcess.with_threads
+		subcomponents
+			heater_thread : thread HeaterThread;
+			cooler_thread : thread CoolerThread;
+			
+		connections
+			heater_in_conn : port heater_in_sig -> heater_thread.in_sig;
+			heater_out_conn: port heater_thread.out_sig -> heater_out_sig;
+			cooler_in_conn : port cooler_in_sig -> cooler_thread.in_sig;
+			cooler_out_conn: port cooler_thread.out_sig -> cooler_out_sig;
+	end SwitchProcess.with_threads;
+	
+	------------ THREADS --------------------
+	
+	thread HeaterThread
+		features
+			in_sig : in data port TurnOnOffType;
+			out_sig : out data port TurnOnOffType;
+	end HeaterThread;
+
+	thread CoolerThread
+		features
+			in_sig : in data port TurnOnOffType;
+			out_sig : out data port TurnOnOffType;
+	end CoolerThread;	
+	------------ BUS -----------------------
+	
+	BUS SPI
+	end SPI;	
+	
+	
+	--------------- MEM ---------------------
+	memory RAM
+		features
+			spi : requires bus access SPI;
+	end RAM;
+	
+	------------- DEVICES -------------------
+	
+	device Heater
+		features
+			turn_on_off: in data port TurnOnOffType; -- wlaczanie/wylaczanie grzejnika
+			spi_access: requires bus access SPI;
+		flows
+			heater_sink : flow sink turn_on_off;
+	end Heater;
+	
+	
+	device Cooler
+		features
+			turn_on_off: in data port TurnOnOffType;
+			spi_access: requires bus access SPI;
+		flows
+			cooler_sink: flow sink turn_on_off;
+	end Cooler;
+	
+	
+end HeaterCoolerSwitch;

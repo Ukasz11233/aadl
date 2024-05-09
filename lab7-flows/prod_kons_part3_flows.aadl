@@ -42,7 +42,6 @@ end producer_task.impl;
 thread consumer_task
   features
     Data_In : in data port Base_Types::Character;
-    
 	flows
 		flow_dest : flow sink Data_In;
 	properties
@@ -66,8 +65,7 @@ process implementation producer.impl
      producer_thread : thread producer_task;
 	connections
 		new_data : port producer_thread.Data_Out -> data_out;
-	flows
- 		flow_source : flow source producer_thread.flow_src -> new_data -> data_out;  -- TODO do ogarniecia jebany flow   
+ 		
 end producer.impl;
 
 

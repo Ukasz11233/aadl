@@ -1,0 +1,28 @@
+package TemperatureController
+public
+	with HeaterCoolerSwitch;
+	with Controller;
+	with TempReader;
+	
+	system TemperatureControllerSystem
+	end TemperatureControllerSystem;
+	
+	system implementation TemperatureControllerSystem.impl
+		subcomponents
+			temp_reader_subsystem : system TempReader::TemperatureReaderSystem.impl;
+			temp_controller_subsystem : system Controller::ControllerSystem.impl;
+			heater_cooler_switch_subsystem: system HeaterCoolerSwitch::HeaterCoolerSwitchSystem.impl;
+		
+		connections
+			temp_reader_temp_controller : port temp_reader_subsystem.temp_out -> temp_controller_subsystem.temp_in;
+			temp_controller_h_switch : port temp_controller_subsystem.heater_signal -> heater_cooler_switch_subsystem.heater_in_sig;
+			temp_controller_c_switch: port temp_controller_subsystem.cooler_signal -> heater_cooler_switch_subsystem.cooler_in_sig;
+			
+		flows
+			e2e_temp_heater_flow : end to end flow temp_reader_subsystem.temp_src -> 
+												temp_reader_temp_controller -> 
+												temp_controller_subsystem.heater_control_flow -> 
+												temp_controller_h_switch ->
+												heater_cooler_switch_subsystem.heater_sink; 
+	end TemperatureControllerSystem.impl;
+end TemperatureController;

@@ -1,0 +1,135 @@
+package TemperatureRegulator
+public
+	with Base_Types;
+	with Data_Model;
+
+
+
+----------------------- DATA TYPES ----------------------------
+
+	data TemperatureType
+		properties
+			Data_Model::Data_Representation => Integer;
+	end TemperatureType;
+	
+	data TurnOnOffType
+		properties
+			Data_Model::Data_Representation => Boolean;
+	end TurnOnOffType;
+	
+	
+	-------------------- SYSTEM -------------------------------
+	
+	system TemperatureRegulatorSystem
+	end TemperatureRegulatorSystem;
+
+	system implementation TemperatureRegulatorSystem.with_devices
+		subcomponents
+			this_heater: device Heater;
+			this_temp_sensor: device TemperatureSensor;
+			this_controller: process Controller;
+			
+		connections
+			temp_sensor_conn: port this_temp_sensor.temp_out -> this_controller.temp_in;
+			heater_conn: port this_controller.turn_on_off_heater -> this_heater.turn_on_off;
+	
+	end TemperatureRegulatorSystem.with_devices;
+
+
+----------------------- PROCESSESS ------------------------------
+
+
+	process Controller
+		features
+			temp_in : in data port TemperatureType;
+			turn_on_off_heater : out data port TurnOnOffType;
+	end Controller;
+	
+	process implementation Controller.with_threads
+		subcomponents
+			this_temperature_reader : thread TemperatureReader;
+			this_calculate : thread Calculate;
+			this_heater_switch: thread HeaterSwitch;
+		connections
+			temp_read_conn : port temp_in -> this_temperature_reader.temp_in;  -- otrzymuje temp z czujnika i przesylam do watku
+			
+			heater_control_in_conn : port temp_in -> this_calculate.temp_in;  -- otrzymuje temp z czujnika i przesylam do watku kalkulatora sterowania
+			heater_control_on_off_conn: port this_calculate.turn_on_off -> this_heater_switch.heater_switch_in; -- przesylam do drugiego watku
+			
+			heater_switch_conn : port this_heater_switch.heater_switch_out -> turn_on_off_heater;
+			--- TODO ADD THIS CONNECTION with thread swtich heater
+			
+	end Controller.with_threads;
+	
+	
+----------------------- THREADS ----------------------------------
+	
+	thread TemperatureReader
+		features
+			temp_in : in data port TemperatureType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 5ms;
+			Period => 10ms;
+			Compute_Execution_Time => 0ms..1ms;
+	end TemperatureReader;
+	
+	thread implementation TemperatureReader.impl
+	end TemperatureReader.impl;
+	
+	
+	thread Calculate
+		features
+			temp_in : in data port TemperatureType;
+			turn_on_off: out data port TurnOnOffType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 10ms;
+			Period => 15ms;
+			Compute_Execution_Time => 0ms..1ms;
+	end Calculate;
+	
+	thread implementation Calculate.impl
+	end Calculate.impl;
+	
+	-- zamysl jest taki, zeby co 30 sekund bral info o temperaturze (info od thread Calculatenp jest buforowane)
+	
+	thread HeaterSwitch
+		features
+			heater_switch_in : in data port TurnOnOffType;
+			heater_switch_out : out data port TurnOnOffType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 20ms;
+			Period => 30000ms; -- 30 sekund
+			Compute_Execution_Time => 0ms..1ms;
+	end HeaterSwitch;
+	
+	thread implementation HeaterSwitch.impl
+	end HeaterSwitch.impl;
+
+------------------------ DEVICES ---------------------------------
+ 
+	device Heater
+		features
+			turn_on_off : in data port TurnOnOffType; -- wlaczanie/wylaczanie grzejnika
+	end Heater;
+
+	device implementation Heater.impl
+	end Heater.impl;
+
+
+
+	device TemperatureSensor
+		features
+			temp_out : out data port TemperatureType; 
+	end TemperatureSensor;
+
+	device implementation TemperatureSensor.impl
+	end TemperatureSensor.impl;
+
+
+end TemperatureRegulator;

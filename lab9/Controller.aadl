@@ -1,0 +1,93 @@
+package Controller
+public
+	with DataTypes;
+	renames DataTypes::all;
+	
+	----------- SYSTEM ----------------------
+	
+	system ControllerSystem
+		features
+			temp_in : in data port TemperatureType;
+			heater_signal : out data port TurnOnOffType;
+			cooler_signal : out data port TurnOnOffType;
+			temp_goal: in data port TemperatureType;
+		flows
+			heater_control_flow : flow path temp_in -> heater_signal;
+			heater_goal_flow : flow path temp_goal -> heater_signal;
+			cooler_control_flow : flow path temp_in -> cooler_signal;
+			cooler_goal_flow : flow path temp_goal -> cooler_signal;
+	end ControllerSystem;
+	
+	system implementation ControllerSystem.impl
+		subcomponents
+			this_process : process Controller;
+			this_processor: processor MainProcessor;
+			this_bus : bus MemBus;
+		connections
+			temp_in_process : port temp_in -> this_process.temp_in;
+			process_heater_signal: port this_process.turn_on_off_heater -> heater_signal;
+			process_cooler_signal: port this_process.turn_on_off_cooler -> cooler_signal;
+			temp_goal_process: port temp_goal -> this_process.temp_goal;
+			
+			bus_mem : bus access this_processor.mem_access <-> this_bus;
+		
+	end ControllerSystem.impl;
+	
+	------------ PROCESSOR -------------------------
+	
+	processor MainProcessor
+		features
+			mem_access: requires bus access MemBus;
+	end MainProcessor;
+
+	processor implementation MainProcessor.impl
+	end MainProcessor.impl;
+
+	-------------- BUS ---------------------------
+	
+	bus MemBus
+	end MemBus;
+
+
+ 	--------------- PROCESS ------------------------
+ 	
+	process Controller
+		features
+			temp_in: in data port TemperatureType;
+			temp_goal: in data port TemperatureType;
+			turn_on_off_heater: out data port TurnOnOffType;
+			turn_on_off_cooler: out data port TurnOnOffType;
+		flows
+			flow_heater_goal : flow path temp_goal -> turn_on_off_heater;
+			flow_heater_data : flow path temp_in -> turn_on_off_heater;
+			flow_cooler_data : flow path temp_in -> turn_on_off_cooler;
+			flow_cooler_goal : flow path temp_goal -> turn_on_off_cooler;
+	end Controller;
+
+	process implementation Controller.with_threads
+		subcomponents
+			this_calculate: thread Calculate;
+		connections
+			control_in_conn: port temp_in -> this_calculate.temp_in; -- otrzymuje temp z czujnika i przesylam do watku kalkulatora sterowania
+			heater_out_conn: port this_calculate.turn_on_off_heater -> turn_on_off_heater;
+			cooler_out_conn: port this_calculate.turn_on_off_cooler -> turn_on_off_cooler;
+			temp_goal_conn: port temp_goal -> this_calculate.temp_goal;
+	end Controller.with_threads;
+	
+	
+	thread Calculate
+		features
+			temp_in: in data port TemperatureType;
+			temp_goal: in data port TemperatureType;
+			turn_on_off_heater: out data port TurnOnOffType;
+			turn_on_off_cooler: out data port TurnOnOffType;
+		properties
+			Dispatch_Protocol => Periodic;
+			Dispatch_Offset => 1ms;
+			Deadline => 10ms;
+			Period => 15ms;
+			Compute_Execution_Time => 0ms .. 1ms;
+	end Calculate;
+	
+	
+end Controller;
