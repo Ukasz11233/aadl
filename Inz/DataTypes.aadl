@@ -1,0 +1,17 @@
+package DataTypes
+public
+	with Data_Model;
+
+	data CO2Data
+		properties
+			Data_Model::Data_Representation => Integer;
+	end CO2Data;
+
+	data TurnOnOffType
+		properties
+			Data_Model::Data_Representation => Boolean;
+	end TurnOnOffType;
+	
+	data MeasuredData
+	end MeasuredData;
+end DataTypes;

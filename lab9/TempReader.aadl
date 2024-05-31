@@ -25,9 +25,13 @@ public
 			
 			bus_temp_sensor : bus access  this_temp_sensor.SPI_access -> this_bus;
 			bus_processor : bus access this_bus -> this_processor.SPI_access;
-			
-		flows
+		flows			
 			e2e_temp_flow : end to end flow this_temp_sensor.temp_src -> temp_sensor_temp_process_conn -> this_temp_process.temp_flow;
+		
+		properties
+			Actual_connection_binding => (reference(this_bus)) applies to temp_sensor_temp_process_conn;
+            Actual_Processor_Binding => (reference(this_processor)) applies to this_temp_process.this_thread;
+			Actual_Processor_Binding => (reference(this_processor)) applies to this_temp_process;
 	end TemperatureReaderSystem.impl;
 	
 
@@ -57,7 +61,6 @@ public
 	process implementation TempProcess.with_thread
 		subcomponents
 			this_thread : thread TemperatureReader;
-		
 		connections
 			temp_read_conn: port temp_in -> this_thread.temp_in;
 			temp_out_conn: port this_thread.temp_out -> temp_out;

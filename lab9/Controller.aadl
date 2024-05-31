@@ -20,9 +20,10 @@ public
 	
 	system implementation ControllerSystem.impl
 		subcomponents
-			this_process : process Controller;
+			this_process : process Controller.with_threads;
 			this_processor: processor MainProcessor;
 			this_bus : bus MemBus;
+			this_mem : memory myMemory;
 		connections
 			temp_in_process : port temp_in -> this_process.temp_in;
 			process_heater_signal: port this_process.turn_on_off_heater -> heater_signal;
@@ -30,6 +31,10 @@ public
 			temp_goal_process: port temp_goal -> this_process.temp_goal;
 			
 			bus_mem : bus access this_processor.mem_access <-> this_bus;
+		
+		properties
+			Actual_Memory_Binding => (reference(this_mem)) applies to this_processor;
+			Actual_Processor_Binding => (reference(this_processor)) applies to this_process.this_calculate;
 		
 	end ControllerSystem.impl;
 	
@@ -48,6 +53,10 @@ public
 	bus MemBus
 	end MemBus;
 
+	--------------- MEM --------------------------
+	
+	memory myMemory
+	end myMemory;
 
  	--------------- PROCESS ------------------------
  	

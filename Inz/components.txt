@@ -1,0 +1,39 @@
+System: STM32
+	Hardware:
+		processor: ARM_CortexM
+		bus: AHB - advanced high-performance bus
+		memory: Flash - pamiec na firmware
+		memory: SRAM - dane operacyjne 
+
+	Software:
+		process: MainProcess
+		thread: Co2SensorTask
+		thread: BuzzerTask
+		thread: LedTask
+
+	
+External devices:
+	device: Co2Sensor
+	device: Buzzer
+	device: LED_bulb
+	
+System: MQTT_Serwer
+		  
+System: DataBase
+	
+System: Web_Interface
+
+
+System: CompleteSystem
+ 	Hardware:
+ 	    stm32 : subsystem STM32
+ 	    co2_sensor : subsystem Co2Sensor
+ 	    buzzer : subsystem Buzzer
+ 	    led : subsystem LED_bulb
+ 	    mqtt_serwer : subsystem MQTT_Serwer
+ 	    database : subsystem DataBase
+ 	    web_interface : subsystem Web_Interface
+ 	    
+ 	    spi : bus SPI -- do komunikacji czujniki <-> mikrokontroler
+ 	    wifi : bus WIFI -- do komunikacji mikrokontroler <-> serwer; serwer <-> baza danych
+ 	    

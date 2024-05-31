@@ -1,4 +1,34 @@
 package Sensors
 public
+	with DataTypes;
+	renames DataTypes::all;
+
+---------------------- SYSTEM -----------------------
+
+system CO2SensorSystem
+	features
+		data_out : out data port CO2Data;
+	flows
+		co2_data_src : flow source data_out;
+end CO2SensorSystem;
+
+system implementation CO2SensorSystem.impl
+	subcomponents
+		sensor : device CO2Sensor;
+end CO2SensorSystem.impl;
+
+
+-------------------- DEVICES -----------------------
 	
+device CO2Sensor
+	features
+		co2_data_out : out data port CO2Data;
+end CO2Sensor;
+
+device buzzer
+	features
+		turn_on_off : in data port TurnOnOffType;
+end buzzer;
+
+
 end Sensors;

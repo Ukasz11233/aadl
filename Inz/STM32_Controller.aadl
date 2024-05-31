@@ -1,0 +1,129 @@
+package STM32_Controller
+public
+	with DataTypes;
+	renames DataTypes::all;
+	
+
+system STM32_Controller_System
+	features
+		co2_data_in : in data port CO2Data;
+		buzzer_sig : out data port TurnOnOffType;
+		led_sig : out data port TurnOnOffType;
+		measured_data : out data port MeasuredData;
+end STM32_Controller_System;
+
+system implementation STM32_Controller_System.impl
+	subcomponents
+		main_process : process MainProcess.with_thread;
+		
+		arm_processor : processor Arm_CortexM;
+		ahb_bus : bus AHB;
+		flash_mem : memory Flash;
+		sram_mem : memory Sram;
+	connections
+		co2_conn : port co2_data_in -> main_process.co2_data_in;
+		buzzer_conn : port main_process.buzzer_sig -> buzzer_sig;
+		led_conn : port main_process.led_sig -> led_sig;
+		mqtt_conn : port main_process.measured_data -> measured_data;
+		
+		ahb_arm_conn : bus access ahb_bus -> arm_processor.ahb;
+		ahb_flash_conn : bus access ahb_bus -> flash_mem.ahb;
+		ahb_sram_conn : bus access ahb_bus -> sram_mem.ahb;
+
+		
+	properties
+		Actual_Processor_Binding => (reference(arm_processor)) applies to main_process.co2_sensor_thread;
+		Actual_Processor_Binding => (reference(arm_processor)) applies to main_process.buzzer_thread;
+		Actual_Processor_Binding => (reference(arm_processor)) applies to main_process.led_thread;
+		
+		Actual_Connection_Binding => (reference (ahb_bus)) applies to ahb_arm_conn;
+		Actual_Connection_Binding => (reference(ahb_bus)) applies to ahb_flash_conn;
+		Actual_Connection_Binding => (reference(ahb_bus)) applies to ahb_sram_conn;
+		
+-- Czy to jest ok ??
+		Actual_Memory_Binding => (reference(arm_processor)) applies to flash_mem;
+		Actual_Memory_Binding => (reference(arm_processor)) applies to sram_mem;	
+		
+		
+end STM32_Controller_System.impl;
+
+--------------------- PROCESS -----------------------
+
+process MainProcess
+	features
+		co2_data_in : in data port CO2Data;
+		buzzer_sig : out data port TurnOnOffType;
+		led_sig : out data port TurnOnOffType;
+		measured_data : out data port MeasuredData;
+	flows
+		co2_buzzer_process_flow : flow path co2_data_in -> buzzer_sig;
+		co2_led_process_flow : flow path co2_data_in -> led_sig;
+		co2_measured_data_flow : flow path co2_data_in -> measured_data;
+end MainProcess;
+
+process implementation MainProcess.with_thread
+	subcomponents
+		co2_sensor_thread : thread Co2SensorTask;
+		buzzer_thread : thread BuzzerTask;
+		led_thread : thread LedTask;
+		mqtt_thread : thread MqttTask;
+	connections
+		co2_data_conn: port co2_data_in -> co2_sensor_thread.co2_data_in;
+		buzzer_sig_conn : port buzzer_thread.buzzer_sig -> buzzer_sig;
+		led_sig_conn : port led_thread.led_sig -> led_sig;
+		mqtt_conn : port mqtt_thread.measured_data -> measured_data;
+end MainProcess.with_thread;
+
+
+---------------------- THREADS ------------------------
+
+thread Co2SensorTask
+	features 
+		co2_data_in : in data port CO2Data;
+end Co2SensorTask;
+
+thread BuzzerTask
+	features
+		buzzer_sig : out data port TurnOnOffType;
+end BuzzerTask;
+
+thread LedTask
+	features
+		led_sig : out data port TurnOnOffType;
+end LedTask;
+
+thread MqttTask
+	features
+		measured_data : out data port MeasuredData;
+end MqttTask;
+
+
+--=================== HARDWARE =========================
+
+-------------------- PROCESSOR -------------------------
+
+processor ARM_CortexM
+	features
+		ahb : requires bus access AHB;
+end ARM_CortexM;
+
+
+
+-------------------- BUS ------------------------------
+
+bus AHB
+end AHB;
+
+-------------------- MEMORY --------------------------
+
+memory Flash
+	features
+		ahb: requires bus access AHB;
+end Flash;
+
+memory Sram
+	features
+		ahb: requires bus access AHB;
+end Sram;
+
+end STM32_Controller;
