@@ -1,0 +1,34 @@
+package Main
+public
+	with STM32_Controller;
+	renames STM32_Controller::all;
+	
+	with Sensors;
+	renames Sensors::all;
+	
+	with Server;
+		
+	system MainSystem
+	end MainSystem;
+	
+	system implementation MainSystem.impl
+		subcomponents
+			STM32 : system STM32_Controller_System.impl;
+			co2_sensor : system CO2SensorSystem.impl;
+			buzzer : system BuzzerSystem.impl;
+			led: system LedSystem.impl;
+			server : system Server::ServerSystem;		
+		connections
+			co2_stm32_conn : port co2_sensor.data_out -> STM32.co2_data_in;
+			stm32_buzzer : port STM32.buzzer_sig -> buzzer.sig_in;
+			stm32_led : port STM32.led_sig -> led.sig_in;
+			stm32_server: port STM32.measured_data -> server.data_in;
+			
+		flows
+			
+			e2e_buzzer: end to end flow co2_sensor.co2_data_src -> co2_stm32_conn -> STM32.buzzer_flow -> stm32_buzzer -> buzzer.co2_data_sink;
+			e2e_led: end to end flow co2_sensor.co2_data_src -> co2_stm32_conn -> STM32.led_flow -> stm32_led -> led.co2_data_sink;
+			e2e_mqtt: end to end flow co2_sensor.co2_data_src -> co2_stm32_conn -> STM32.mqtt_flow -> stm32_server -> server.mqtt_sink;
+			
+	end MainSystem.impl;
+end Main;

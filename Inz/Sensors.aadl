@@ -18,6 +18,32 @@ system implementation CO2SensorSystem.impl
 end CO2SensorSystem.impl;
 
 
+system BuzzerSystem
+	features
+		sig_in : in data port TurnOnOffType;
+	flows
+		co2_data_sink : flow sink sig_in;
+end BuzzerSystem;
+
+
+system implementation BuzzerSystem.impl
+	subcomponents
+		buzzer : device Buzzer;
+end BuzzerSystem.impl;
+
+
+system LedSystem
+	features
+		sig_in : in data port TurnOnOffType;
+	flows
+		co2_data_sink : flow sink sig_in;
+end LedSystem;
+
+system implementation LedSystem.impl
+	subcomponents
+		led : device Led;
+end LedSystem.impl;
+
 -------------------- DEVICES -----------------------
 	
 device CO2Sensor
@@ -25,10 +51,14 @@ device CO2Sensor
 		co2_data_out : out data port CO2Data;
 end CO2Sensor;
 
-device buzzer
+device Buzzer
 	features
 		turn_on_off : in data port TurnOnOffType;
-end buzzer;
+end Buzzer;
 
+device Led
+	features
+		turn_on_off : in data port TurnOnOffType;
+end Led;
 
 end Sensors;

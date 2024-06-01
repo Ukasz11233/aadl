@@ -2,6 +2,8 @@ package STM32_Controller
 public
 	with DataTypes;
 	renames DataTypes::all;
+
+	with SEI;
 	
 
 system STM32_Controller_System
@@ -10,6 +12,10 @@ system STM32_Controller_System
 		buzzer_sig : out data port TurnOnOffType;
 		led_sig : out data port TurnOnOffType;
 		measured_data : out data port MeasuredData;
+	flows
+		buzzer_flow : flow path co2_data_in -> buzzer_sig;
+		led_flow : flow path co2_data_in -> led_sig;
+		mqtt_flow : flow path co2_data_in -> measured_data;
 end STM32_Controller_System;
 
 system implementation STM32_Controller_System.impl
@@ -18,8 +24,9 @@ system implementation STM32_Controller_System.impl
 		
 		arm_processor : processor Arm_CortexM;
 		ahb_bus : bus AHB;
-		flash_mem : memory Flash;
-		sram_mem : memory Sram;
+		flash_mem : memory InternalMemory.Flash;
+		sram_mem : memory InternalMemory.Sram;
+		internal_mem : memory InternalMemory;
 	connections
 		co2_conn : port co2_data_in -> main_process.co2_data_in;
 		buzzer_conn : port main_process.buzzer_sig -> buzzer_sig;
@@ -32,7 +39,7 @@ system implementation STM32_Controller_System.impl
 
 		
 	properties
-		Actual_Processor_Binding => (reference(arm_processor)) applies to main_process.co2_sensor_thread;
+
 		Actual_Processor_Binding => (reference(arm_processor)) applies to main_process.buzzer_thread;
 		Actual_Processor_Binding => (reference(arm_processor)) applies to main_process.led_thread;
 		
@@ -40,10 +47,23 @@ system implementation STM32_Controller_System.impl
 		Actual_Connection_Binding => (reference(ahb_bus)) applies to ahb_flash_conn;
 		Actual_Connection_Binding => (reference(ahb_bus)) applies to ahb_sram_conn;
 		
--- Czy to jest ok ??
+
 		Actual_Memory_Binding => (reference(arm_processor)) applies to flash_mem;
 		Actual_Memory_Binding => (reference(arm_processor)) applies to sram_mem;	
 		
+		Actual_Memory_Binding => (reference(internal_mem)) applies to main_process, 
+														main_process.buzzer_thread, 
+														main_process.led_thread, 
+														main_process.mqtt_thread;
+		-- how to bind ROM memory???												
+
+		
+		SEI::BandWidthCapacity => 1.0 GBytesps applies to ahb_bus;
+		SEI::BandWidthBudget => 25.0 MBytesps applies to ahb_bus;
+		
+		SEI::BandWidthBudget => 10.0 MBytesps applies to ahb_arm_conn;
+		SEI::BandWidthBudget => 5.0 MBytesps applies to ahb_flash_conn;
+		SEI::BandWidthBudget => 10.0 MBytesps applies to ahb_sram_conn;	
 		
 end STM32_Controller_System.impl;
 
@@ -55,46 +75,64 @@ process MainProcess
 		buzzer_sig : out data port TurnOnOffType;
 		led_sig : out data port TurnOnOffType;
 		measured_data : out data port MeasuredData;
-	flows
-		co2_buzzer_process_flow : flow path co2_data_in -> buzzer_sig;
-		co2_led_process_flow : flow path co2_data_in -> led_sig;
-		co2_measured_data_flow : flow path co2_data_in -> measured_data;
+	properties
+		SEI::RAMBudget => 32.0 KByte;
+		SEI::ROMBudget => 8.0 KByte;
+		SEI::MIPSBudget => 0.8 mips;
 end MainProcess;
 
 process implementation MainProcess.with_thread
 	subcomponents
-		co2_sensor_thread : thread Co2SensorTask;
 		buzzer_thread : thread BuzzerTask;
 		led_thread : thread LedTask;
 		mqtt_thread : thread MqttTask;
 	connections
-		co2_data_conn: port co2_data_in -> co2_sensor_thread.co2_data_in;
+		co2_data_buzzer: port co2_data_in -> buzzer_thread.co2_data_in;
+		co2_data_mqtt: port co2_data_in -> mqtt_thread.co2_data_in;
+		co2_data_lad: port co2_data_in -> led_thread.co2_data_in;
 		buzzer_sig_conn : port buzzer_thread.buzzer_sig -> buzzer_sig;
 		led_sig_conn : port led_thread.led_sig -> led_sig;
 		mqtt_conn : port mqtt_thread.measured_data -> measured_data;
+		
+	properties
+		SEI::MIPSBudget => 0.2 mips applies to buzzer_thread;
+		SEI::MIPSBudget => 0.2 mips applies to led_thread;
+		SEI::MIPSBudget => 0.2 mips applies to mqtt_thread;
+		
+		SEI::RAMBudget => 4.0 KByte applies to buzzer_thread;
+		SEI::RAMBudget => 4.0 KByte applies to led_thread;
+		SEI::RAMBudget => 8.0 KByte applies to mqtt_thread;
+		
+		SEI::ROMBudget => 2.0 KByte applies to buzzer_thread;
+		SEI::ROMBudget => 2.0 KByte applies to led_thread;
+		SEI::ROMBudget => 3.0 KByte applies to mqtt_thread;
 end MainProcess.with_thread;
 
 
 ---------------------- THREADS ------------------------
 
-thread Co2SensorTask
-	features 
-		co2_data_in : in data port CO2Data;
-end Co2SensorTask;
-
 thread BuzzerTask
 	features
+		co2_data_in : in data port CO2Data;
 		buzzer_sig : out data port TurnOnOffType;
+	flows
+		buzzer_flow : flow path co2_data_in -> buzzer_sig;
 end BuzzerTask;
 
 thread LedTask
 	features
+		co2_data_in : in data port CO2Data;
 		led_sig : out data port TurnOnOffType;
+	flows
+		led_flow : flow path co2_data_in -> led_sig;
 end LedTask;
 
 thread MqttTask
 	features
+		co2_data_in : in data port CO2Data;
 		measured_data : out data port MeasuredData;
+	flows
+		mqtt_flow : flow path co2_data_in -> measured_data;
 end MqttTask;
 
 
@@ -105,6 +143,8 @@ end MqttTask;
 processor ARM_CortexM
 	features
 		ahb : requires bus access AHB;
+	properties
+		SEI::MIPSCapacity => 1.2 mips;
 end ARM_CortexM;
 
 
@@ -112,18 +152,28 @@ end ARM_CortexM;
 -------------------- BUS ------------------------------
 
 bus AHB
+	properties
+		Transmission_Time => [Fixed => 1ns..2ns; PerByte => 2ns..3ns;];
+		Period => 1 ms;
+		SEI::BandWidthCapacity => 1.2 GBytesps;
 end AHB;
 
 -------------------- MEMORY --------------------------
 
-memory Flash
+memory internalMemory
 	features
 		ahb: requires bus access AHB;
-end Flash;
 
-memory Sram
-	features
-		ahb: requires bus access AHB;
-end Sram;
+end internalMemory;
+
+memory implementation InternalMemory.Sram
+	properties
+		SEI::RAMCapacity => 64.0 KByte;
+end InternalMemory.Sram;
+
+memory implementation InternalMemory.Flash
+	properties
+		SEI::ROMCapacity => 32.0 KByte;
+end InternalMemory.Flash;
 
 end STM32_Controller;

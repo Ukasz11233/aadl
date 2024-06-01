@@ -1,0 +1,63 @@
+package Server
+public
+	with DataTypes;	
+	renames DataTypes::all;
+	
+	with SEI;
+	system ServerSystem
+		features
+			data_in : in data port MeasuredData;
+		flows
+			mqtt_sink : flow sink data_in;
+	end ServerSystem;
+	
+	system implementation ServerSystem.impl
+		subcomponents
+			mqtt_server : system MqttServerSystem;
+			database : system DatabaseSystem;
+			ethernet : bus Ethernet;
+			cpu : processor;
+		connections
+			data_in_mqtt : port data_in -> mqtt_server.data_in;
+			mqtt_db: port mqtt_server.data_out -> database.data_in;
+			
+			mqtt_eth: bus access ethernet <-> mqtt_server.eth;
+			database_eth : bus access ethernet <-> database.eth;
+		
+		flows
+			e2e_mqtt_db : end to end flow mqtt_server.mqtt_src -> mqtt_db -> database.data_sink;
+	
+		properties
+				Actual_Connection_Binding => (reference (ethernet)) applies to mqtt_eth, database_eth;
+				Actual_Connection_Binding => (reference (ethernet)) applies to mqtt_db;
+	
+	
+	end ServerSystem.impl;
+	
+	system MqttServerSystem
+		features
+			data_in : in data port MeasuredData;
+			data_out : out data port ProcessedData;
+			eth : requires bus access Ethernet;
+		flows
+			mqtt_sink : flow sink data_in;
+			mqtt_src : flow source data_out;
+	end MqttServerSystem;
+	
+	system DatabaseSystem
+		features
+			data_in : in data port DataTypes::ProcessedData;			
+			eth : requires bus access Ethernet;
+		flows
+			data_sink : flow sink data_in;
+	end DatabaseSystem;
+	
+	bus Ethernet
+	   properties
+	    	Transmission_Time => [Fixed => 1ns..2ns; PerByte => 3ns ..4ns;];
+	    	Period => 1 ms;
+	    	SEI::BandWidthCapacity => 1.0 GBytesps;
+	    	SEI::BandWidthBudget => 20.0 MBytesps;
+	end Ethernet;
+	
+end Server;

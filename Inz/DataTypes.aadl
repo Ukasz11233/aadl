@@ -14,4 +14,7 @@ public
 	
 	data MeasuredData
 	end MeasuredData;
+	
+	data ProcessedData
+	end ProcessedData;
 end DataTypes;
