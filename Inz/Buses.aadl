@@ -1,0 +1,19 @@
+package Buses
+public
+with SEI;
+	bus WiFI
+		properties
+			Transmission_Time => [Fixed => 1ns..2ns; PerByte => 3ns..4ns;];
+			Period => 1ms;
+			SEI::BandWidthCapacity => 120.0 MBytesps;
+			SEI::BandWidthBudget => 60.0 MBytesps;
+	end WiFI;
+	
+	bus Ethernet
+		properties
+			Transmission_Time => [Fixed => 1ns..2ns; PerByte => 2ns ..3ns;];
+	    	Period => 1 ms;
+	    	SEI::BandWidthCapacity => 1.0 GBytesps;
+	    	SEI::BandWidthBudget => 20.0 MBytesps;
+	end Ethernet;
+end Buses;
