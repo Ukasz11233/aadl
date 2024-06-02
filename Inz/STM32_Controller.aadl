@@ -1,4 +1,4 @@
-package S44TM32_Controller
+package STM32_Controller
 public
 	with DataTypes;
 	renames DataTypes::all;
@@ -45,13 +45,13 @@ system implementation STM32_Controller_System.impl
 		B6 : bus access spi_bus <-> led.spi;
 										
 	flows
-		buzzer_flow_e2e: end to end flow co2_sensor.co2_src -> 
+		F1: end to end flow co2_sensor.co2_src -> 
 										C1 ->
 										main_process.buzzer_flow ->
 										C2 ->
 										buzzer.co2_sink;
 										
-		led_flow_e2e: end to end flow co2_sensor.co2_src ->
+		F2: end to end flow co2_sensor.co2_src ->
 									C1 ->
 									main_process.led_flow ->
 									C3 ->
@@ -239,8 +239,7 @@ device CO2Sensor
 		co2_data_out : out data port CO2Data;
 		spi : requires bus access SPI;
 	flows
-		co2_src : flow source co2_data_out;
-		
+		co2_src : flow source co2_data_out;	
 end CO2Sensor;
 
 device Buzzer

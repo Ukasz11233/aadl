@@ -22,22 +22,22 @@ public
 			cpu : processor EthProcessor;
 			
 		connections
-			data_in_mqtt : port data_in -> mqtt_server.data_in;
-			mqtt_db: port mqtt_server.data_out -> database.data_in;
+			C1 : port data_in -> mqtt_server.data_in;
+			C2: port mqtt_server.data_out -> database.data_in;
 			
-			mqtt_eth: bus access ethernet <-> mqtt_server.eth;
-			database_eth : bus access ethernet <-> database.eth;
+			B1: bus access ethernet <-> mqtt_server.eth;
+			B2 : bus access ethernet <-> database.eth;
 			
-			cpu_eth : bus access ethernet <-> cpu.eth;
+			B3 : bus access ethernet <-> cpu.eth;
 			
 		flows
-			e2e_mqtt_db : end to end flow mqtt_server.mqtt_src -> mqtt_db -> database.data_sink;
+			e2e_mqtt_db : end to end flow mqtt_server.mqtt_src -> C2 -> database.data_sink;
 	    properties
-        	Actual_Connection_Binding => (reference(ethernet)) applies to mqtt_db, cpu_eth;
+        	Actual_Connection_Binding => (reference(ethernet)) applies to C2, B3;
 			Actual_Processor_Binding => (reference(cpu)) applies to mqtt_server, database;
 			
 			SEI::BandWidthCapacity => 10.0 GBytesps applies to ethernet;
-			SEI::BandWidthBudget => 2.0 GBytesps applies to mqtt_db;
+			SEI::BandWidthBudget => 2.0 GBytesps applies to C2;
 			
 	end ServerSystem.impl;
 	
