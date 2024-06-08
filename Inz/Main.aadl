@@ -14,26 +14,18 @@ public
 			STM32 : system STM32_Controller_System.impl;
 			server : system Server::ServerSystem;
 			wifi : bus Buses::WiFi;		
-			cpu : processor WiFiProcessor;
 		connections
-			stm32_server: port STM32.measured_data -> server.data_in;
+			stm32_server: port STM32.measured_data_out -> server.measured_data_in;
 			
 			wifi_server : bus access wifi <-> server.wifi;
 			wifi_stm32 : bus access wifi <-> STM32.wifi;
-			wifi_cpu : bus access wifi <-> cpu.wifi;	
 				
 		flows
 			e2e_mqtt: end to end flow STM32.mqtt_src -> stm32_server -> server.mqtt_sink;
 			
 		properties
-			Actual_Connection_Binding => (reference(wifi)) applies to wifi_server, wifi_stm32, STM32.measured_data;
+			Actual_Connection_Binding => (reference(wifi)) applies to wifi_server, wifi_stm32, STM32.measured_data_out;
 			Actual_Connection_Binding => (reference(STM32),	 reference(server)) applies to stm32_server;				
-			
-			Actual_Processor_Binding => (reference(cpu)) applies to STM32, server;
+		
 	end MainSystem.impl;
-	
-	processor WiFiProcessor
-		features
-			wifi : requires bus access Buses::WiFi;
-	end WiFiProcessor;
 end Main;

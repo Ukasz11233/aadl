@@ -8,10 +8,10 @@ public
 	
 	system ServerSystem
 		features
-			data_in : in data port MeasuredData;
+			measured_data_in : in data port MeasuredData;
 			wifi : requires bus access Buses::WiFi;
 		flows
-			mqtt_sink : flow sink data_in;
+			mqtt_sink : flow sink measured_data_in;
 	end ServerSystem;
 	
 	system implementation ServerSystem.impl
@@ -22,7 +22,7 @@ public
 			cpu : processor EthProcessor;
 			
 		connections
-			C1 : port data_in -> mqtt_server.data_in;
+			C1 : port measured_data_in -> mqtt_server.data_in;
 			C2: port mqtt_server.data_out -> database.data_in;
 			
 			B1: bus access ethernet <-> mqtt_server.eth;

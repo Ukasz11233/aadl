@@ -16,4 +16,17 @@ with SEI;
 	    	SEI::BandWidthCapacity => 1.0 GBytesps;
 	    	SEI::BandWidthBudget => 20.0 MBytesps;
 	end Ethernet;
+	
+	bus AHB
+	properties
+		Transmission_Time => [Fixed => 1ns..2ns; PerByte => 2ns..3ns;];
+		Period => 1 ms;
+		SEI::BandWidthCapacity => 1.2 GBytesps;
+	end AHB;
+	
+	bus SPI
+		properties
+			Period => 1ms;
+			SEI::BandwidthCapacity => 10.0 KBytesps;
+	end SPI;
 end Buses;
