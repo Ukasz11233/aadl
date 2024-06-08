@@ -1,0 +1,94 @@
+package Server_Software
+public
+    with DataTypes;
+
+    renames DataTypes::all;
+
+--------------- PROCESS -------------------------------
+
+    process MainProcess
+        features
+            data_in  : in data port MeasuredData;
+            data_out : out data port ProcessedData;
+        flows
+            mqtt_sink : flow sink data_in;
+            mqtt_src  : flow source data_out;
+         	FF1 : flow path data_in -> data_out;
+            
+        end MainProcess;
+
+    process implementation MainProcess.impl
+        subcomponents
+            ReceiveThread : thread ReceiveThread.impl;
+            StoreThread   : thread StoreThread.impl;
+
+        connections
+            CC1 : port data_in -> ReceiveThread.data_in;
+            CC2 : port ReceiveThread.data_out -> StoreThread.data_in;
+            CC3 : port StoreThread.data_out -> data_out;
+        flows
+        	FF1 : flow path data_in -> CC1 ->  ReceiveThread.FT1 -> CC2 -> StoreThread.FT2 -> CC3 -> data_out;
+        
+	end MainProcess.impl;
+        
+       
+    process DataBaseProcess
+    	features
+    		data_in : in data port ProcessedData;
+    	flows
+    		F_sink : flow sink data_in;
+    end DataBaseProcess;
+    
+   	process implementation DataBaseProcess.impl
+   		subcomponents
+   			DataBaseThread : thread DBThread;
+   		connections
+   			CC4 : port data_in ->  DataBaseThread.data_in;
+    end DataBaseProcess.impl;
+    
+    ------------ THREADS -------------------------
+    
+    thread DBThread
+    	features
+    		data_in : in data port ProcessedData;
+    	flows
+    		db_sink: flow sink data_in;
+    end DBThread;
+
+	thread implementation DBThread.impl
+		properties
+			Dispatch_Protocol => Periodic;
+			Period => 30ms;
+	end DBThread.impl;
+
+
+    thread ReceiveThread
+        features
+            data_in  : in data port MeasuredData;
+            data_out : out data port ProcessedData;
+    	flows
+    		FT1: flow path data_in -> data_out;
+   	end ReceiveThread;
+
+    thread implementation ReceiveThread.impl
+        properties
+            Dispatch_Protocol => Periodic;
+            Period => 20 ms;
+        end ReceiveThread.impl;
+
+
+    thread StoreThread
+        features
+            data_in  : in data port ProcessedData;
+            data_out : out data port ProcessedData;
+    	flows
+    		FT2: flow path data_in -> data_out;
+        end StoreThread;
+
+    thread implementation StoreThread.impl
+        properties
+            Dispatch_Protocol => Sporadic;
+            Period => 50 ms;
+        end StoreThread.impl;
+
+end Server_Software;

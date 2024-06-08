@@ -1,9 +1,9 @@
 package Main
 public
-	with STM32_Controller;
-	renames STM32_Controller::all;
+	with Microcontroller_System;
+	renames Microcontroller_System::all;
 	
-	with Server;
+	with Server_System;
 	with Buses;
 	
 	system MainSystem
@@ -11,8 +11,8 @@ public
 	
 	system implementation MainSystem.impl
 		subcomponents
-			STM32 : system STM32_Controller_System.impl;
-			server : system Server::ServerSystem;
+			STM32 : system Microcontroller_System.impl;
+			server : system Server_System::Server_System;
 			wifi : bus Buses::WiFi;		
 		connections
 			stm32_server: port STM32.measured_data_out -> server.measured_data_in;

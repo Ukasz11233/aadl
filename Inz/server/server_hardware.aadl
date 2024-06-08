@@ -1,0 +1,24 @@
+package server_hardware
+public
+	with Buses;
+	with SEI;
+	
+	processor IntelXeon
+		features
+			pcie : requires bus access Buses::PCIe;
+		properties
+			SEI::MIPSCapacity => 5.0 mips;
+	end IntelXeon;
+	
+	memory RAM
+		features
+			pcie : requires bus access Buses::PCIe;
+    end RAM;
+    
+    memory HDD
+    	features
+    		pcie : requires bus access Buses::Pcie;
+    end HDD;
+    
+
+end server_hardware;

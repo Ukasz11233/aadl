@@ -29,4 +29,12 @@ with SEI;
 			Period => 1ms;
 			SEI::BandwidthCapacity => 10.0 KBytesps;
 	end SPI;
+	
+    bus PCIe
+        properties
+            Transmission_Time => [Fixed => 1ns .. 2ns; PerByte => 1ns .. 2ns;];
+            Period => 1 ms;
+            SEI::BandWidthCapacity => 16.0 GBytesps;
+            SEI::BandWidthBudget => 8.0 GBytesps;
+    end PCIe;
 end Buses;

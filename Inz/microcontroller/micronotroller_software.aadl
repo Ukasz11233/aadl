@@ -1,0 +1,101 @@
+package Micronotroller_Software
+public
+	with DataTypes;
+	renames DataTypes::all;
+	
+	with SEI;
+	
+
+process MainProcess
+	features
+		Co2_Data : in data port CO2Data;
+		Buzzer_Sig : out data port TurnOnOffType;
+		Led_Sig : out data port TurnOnOffType;
+		Measured_Data : out data port MeasuredData;
+	flows
+		FF1 : flow path Co2_Data -> Buzzer_Sig;
+		FF2 : flow path Co2_Data -> Led_Sig;
+		FF3 : flow path Co2_Data -> Measured_Data;
+	properties
+		SEI::RAMBudget => 16.0 KByte;
+		SEI::ROMBudget => 8.0 KByte;
+		SEI::MIPSBudget => 0.8 mips;
+		
+end MainProcess;
+
+process implementation MainProcess.with_thread
+	subcomponents
+		Buzzer_Thread : thread BuzzerTask;
+		Led_Thread : thread LedTask;
+		Mqtt_Thread : thread MqttTask;
+	connections
+		CC1: port Co2_Data -> Buzzer_Thread.Co2_Data;
+		CC2: port Co2_Data -> Mqtt_Thread.Co2_Data;
+		CC3: port Co2_Data -> Led_Thread.Co2_Data;
+		CC4 : port Buzzer_Thread.Buzzer_Sig -> Buzzer_Sig;
+		CC5 : port Led_Thread.Led_Sig -> Led_Sig;
+		CC6 : port Mqtt_Thread.Measured_Data -> Measured_Data;
+	flows
+		FF1 : flow path Co2_Data -> CC1 -> Buzzer_Thread.Buzzer_Flow -> CC4 -> Buzzer_Sig;
+		FF2 : flow path Co2_Data -> CC3 -> Led_Thread.Led_Flow -> CC5 -> Led_Sig;
+		FF3 : flow path Co2_Data -> CC2 -> Mqtt_Thread.Mqtt_Flow -> CC6 -> Measured_Data;
+		
+	properties
+		SEI::MIPSBudget => 0.2 mips applies to Buzzer_Thread;
+		SEI::MIPSBudget => 0.2 mips applies to Led_Thread;
+		SEI::MIPSBudget => 0.2 mips applies to Mqtt_Thread;
+		
+		
+		SEI::RAMBudget => 4.0 KByte applies to Buzzer_Thread;
+		SEI::RAMBudget => 4.0 KByte applies to Led_Thread;
+		SEI::RAMBudget => 8.0 KByte applies to Mqtt_Thread;
+		
+		SEI::ROMBudget => 2.0 KByte applies to Buzzer_Thread;
+		SEI::ROMBudget => 2.0 KByte applies to Led_Thread;
+		SEI::ROMBudget => 3.0 KByte applies to Mqtt_Thread;
+
+end MainProcess.with_thread;
+
+
+---------------------- THREADS ------------------------
+
+thread BuzzerTask
+	features
+		Co2_Data : in data port CO2Data;
+		Buzzer_Sig : out data port TurnOnOffType;
+	flows
+		Buzzer_Flow : flow path Co2_Data -> Buzzer_Sig;
+	properties
+		Priority => 1;
+    	Dispatch_Protocol => Sporadic;
+    	Period => 1000 us;
+    	Compute_Execution_Time => 10 us .. 50 us;
+end BuzzerTask;
+
+thread LedTask
+	features
+		Co2_Data : in data port CO2Data;
+		Led_Sig : out data port TurnOnOffType;
+	flows
+		Led_Flow : flow path Co2_Data -> Led_Sig;
+	properties
+		Priority => 1;
+    	Dispatch_Protocol => Sporadic;
+    	Period => 1000 us;
+    	Compute_Execution_Time => 10 us .. 50 us;
+end LedTask;
+
+thread MqttTask
+	features
+		Co2_Data : in data port CO2Data;
+		Measured_Data : out data port MeasuredData;
+	flows
+		Mqtt_Flow : flow path Co2_Data -> Measured_Data;
+		
+	properties
+		Priority => 1;
+    	Dispatch_Protocol => Sporadic;
+    	Period => 1000 us;
+    	Compute_Execution_Time => 20 us .. 100 us;
+end MqttTask;
+end Micronotroller_Software;

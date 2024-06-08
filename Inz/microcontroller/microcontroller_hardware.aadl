@@ -1,0 +1,30 @@
+package Microcontroller_Hardware
+public
+	
+	with SEI;
+	with Buses;
+	
+processor STM32
+	features
+		ahb : requires bus access Buses::AHB;
+	properties
+		SEI::MIPSCapacity => 1.2 mips;
+end STM32;
+
+-------------------- MEMORY --------------------------
+
+memory internalMemory
+	features
+		ahb: requires bus access Buses::AHB;
+end internalMemory;
+
+memory implementation internalMemory.Sram
+	properties
+		SEI::RAMCapacity => 64.0 KByte;
+end InternalMemory.Sram;
+
+memory implementation internalMemory.Flash
+	properties
+		SEI::ROMCapacity => 32.0 KByte;
+end InternalMemory.Flash;
+end Microcontroller_Hardware;

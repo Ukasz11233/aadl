@@ -1,0 +1,119 @@
+package Microcontroller_System
+public
+	with DataTypes;
+	renames DataTypes::all;
+
+	with Buses;
+	with SEI;
+	
+	with Micronotroller_Software;
+	renames Micronotroller_Software::all;
+	
+	with Microcontroller_Hardware;
+	renames Microcontroller_Hardware::all;
+	
+	with Microcontroller_Devices;
+	renames Microcontroller_Devices::all;
+
+system Microcontroller_System
+	features
+		measured_data_out : out data port MeasuredData;
+		wifi : requires bus access Buses::WiFI;
+	flows
+		mqtt_src : flow source measured_data_out;
+end Microcontroller_System;
+
+system implementation Microcontroller_System.impl
+	subcomponents
+		-- software
+		MainProcess : process MainProcess.with_thread;
+
+		-- hardware ---
+		STM32 : processor STM32;
+		Ahb_Bus : bus Buses::AHB;
+		Spi_Bus : bus Buses::SPI;
+		Flash_Mem : memory internalMemory.Flash;
+		Sram_Mem : memory internalMemory.Sram;
+		Co2_Sensor : device CO2Sensor;
+		Buzzer : device Buzzer;
+		Led: device Led;
+				
+	connections
+		C1 : port Co2_Sensor.co2_data -> MainProcess.Co2_Data;
+		C2 : port MainProcess.Buzzer_Sig -> Buzzer.turn_on_off;
+		C3 : port MainProcess.Led_Sig -> Led.turn_on_off;
+		C4 : port MainProcess.Measured_Data -> measured_data_out;
+		
+		B1 : bus access Ahb_Bus <-> STM32.ahb;
+		B2 : bus access Ahb_Bus <-> Flash_Mem.ahb;
+		B3 : bus access Ahb_Bus <-> Sram_Mem.ahb;
+		
+		B4 : bus access Spi_Bus <-> Co2_Sensor.spi;
+		B5 : bus access Spi_Bus <-> Buzzer.spi;
+		B6 : bus access Spi_Bus <-> Led.spi;
+										
+	flows
+		F1: end to end flow Co2_Sensor.co2_src -> 
+										C1 ->
+										MainProcess.FF1 ->
+										C2 ->
+										Buzzer.co2_sink;
+										
+		F2: end to end flow Co2_Sensor.co2_src ->
+									C1 ->
+									MainProcess.FF2 ->
+									C3 ->
+									Led.co2_sink;																					
+	properties
+		Actual_Processor_Binding => (reference(STM32)) applies to MainProcess.Buzzer_Thread;
+		Actual_Processor_Binding => (reference(STM32)) applies to MainProcess.Led_Thread;
+		Actual_Processor_Binding => (reference(STM32)) applies to MainProcess.Mqtt_Thread;
+		
+		Actual_Memory_Binding => (reference(STM32)) applies to Flash_Mem;
+		Actual_Memory_Binding => (reference(STM32)) applies to Sram_Mem;	
+		
+		Actual_Connection_Binding => (reference (Ahb_Bus)) applies to B1;
+		Actual_Connection_Binding => (reference(Ahb_Bus)) applies to B2;
+		Actual_Connection_Binding => (reference(Ahb_Bus)) applies to B3;
+		
+		Actual_Connection_Binding => (reference(Spi_Bus)) applies to B4;
+		Actual_Connection_Binding => (reference(Spi_Bus)) applies to B5;
+		Actual_Connection_Binding => (reference(Spi_Bus)) applies to B6;
+
+		
+		Actual_Memory_Binding => (reference(Flash_Mem), reference(Sram_Mem)) applies to MainProcess, 
+														MainProcess.Buzzer_Thread, 
+														MainProcess.Led_Thread, 
+														MainProcess.Mqtt_Thread;											
+		
+		SEI::BandWidthBudget => 50.0 MBytesps applies to Ahb_Bus;
+		SEI::BandWidthBudget => 2.0 KBytesps applies to Spi_Bus;
+		
+		SEI::BandWidthBudget => 10.0 MBytesps applies to B1;
+		SEI::BandWidthBudget => 5.0 MBytesps applies to B2;
+		SEI::BandWidthBudget => 10.0 MBytesps applies to B3;	
+		
+		SEI::BandWidthBudget => 0.5 KBytesps applies to B4;
+		SEI::BandWidthBudget => 0.1 KBytesps applies to B5;
+		SEI::BandWidthBudget => 0.1 KBytesps applies to B6;
+
+
+		SEI::MIPSBudget => 10.0 kips applies to Co2_Sensor;
+		SEI::RAMBudget => 2.0 KByte applies to Co2_Sensor;
+		SEI::ROMBudget => 0.0 KByte applies to Co2_Sensor;
+		
+		SEI::MIPSBudget => 10.0 kips applies to Buzzer;
+		SEI::RAMBudget => 2.0 KByte applies to Buzzer;
+		SEI::ROMBudget => 0.0 KByte applies to Buzzer;
+		
+		SEI::MIPSBudget => 10.0 kips applies to Led;
+		SEI::RAMBudget => 2.0 KByte applies to Led;
+		SEI::ROMBudget => 0.0 KByte applies to Led;
+		
+	----------- POWER PROPERTIES -----------------
+		SEI::PowerCapacity => 200.0 mW;
+			
+
+end Microcontroller_System.impl;
+
+end Microcontroller_System;

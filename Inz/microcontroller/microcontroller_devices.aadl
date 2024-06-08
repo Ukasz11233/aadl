@@ -1,0 +1,43 @@
+package microcontroller_devices
+public
+	with Buses;
+	
+	with DataTypes;
+	renames DataTypes::all;
+	
+	device CO2Sensor
+	features
+		co2_data : out data port CO2Data;
+		spi : requires bus access Buses::SPI;
+	flows
+		co2_src : flow source co2_data;	
+		
+	properties
+    	Dispatch_Protocol => Periodic;
+    	Period            => 1000 ms;
+    	
+end CO2Sensor;
+
+device Buzzer
+	features
+		turn_on_off : in data port TurnOnOffType;
+		spi : requires bus access Buses::SPI;
+	flows
+		co2_sink : flow sink turn_on_off;
+	properties
+		Dispatch_Protocol => Sporadic;
+		
+end Buzzer;
+
+device Led
+	features
+		turn_on_off : in data port TurnOnOffType;
+		spi : requires bus access Buses::SPI;
+	flows
+		co2_sink : flow sink turn_on_off;
+	properties
+		Dispatch_Protocol => Sporadic;
+		
+end Led;
+	
+end microcontroller_devices;
