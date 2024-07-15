@@ -7,12 +7,14 @@ public
 		features
 			pcie : requires bus access Buses::PCIe;
 		properties
-			SEI::MIPSCapacity => 5.0 mips;
+			SEI::MIPSCapacity => 50.0 mips;
 	end IntelXeon;
 	
 	memory RAM
 		features
 			pcie : requires bus access Buses::PCIe;
+		properties
+			SEI::RAMCapacity => 128.0 GByte;
     end RAM;
     
     memory HDD

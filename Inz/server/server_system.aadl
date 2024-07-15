@@ -3,6 +3,8 @@ public
 	with DataTypes;	
 	renames DataTypes::all;
 	
+	with SEI;
+	
 	with Buses;
 	
 	with Server_Software;
@@ -41,9 +43,26 @@ public
 		properties
 			Actual_Processor_Binding => (reference(cpu)) applies to mqtt_process,
 																	db_process;
+																	
+			Actual_Memory_Binding => (reference(ram), reference(hdd)) applies to cpu, 
+																	mqtt_process, 
+																	mqtt_process.ReceiveThread,
+																	mqtt_process.StoreThread, 
+																	db_process;
 			
-			Actual_Connection_Binding => (reference(pcie)) applies to C1;
-			Actual_Connection_Binding => (reference(pcie)) applies to C2;
+			
+			Actual_Connection_Binding => (reference(pcie)) applies to B1;
+			Actual_Connection_Binding => (reference(pcie)) applies to B2;
+			Actual_Connection_Binding => (reference(pcie)) applies to B3;
+			
+			SEI::BandWidthBudget => 8.0 GBytesps applies to pcie;
+			
+			SEI::BandWidthBudget => 2.0 GBytesps applies to B1;
+			SEI::BandWidthBudget => 1.0 GBytesps applies to B2;
+			SEI::BandWidthBudget => 1.0 GBytesps applies to B3;	
+			
+			
+			SEI::PowerCapacity => 0.8 KW;
 			
 	end Server_System.impl;	
 	

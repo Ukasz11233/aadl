@@ -34,6 +34,7 @@ public
 	
 	data implementation ProcessedData.impl
 		subcomponents
+			id : data Base_Types::Integer;
 			MeasuredData : data MeasuredData;
 	end ProcessedData.impl;
 end DataTypes;
