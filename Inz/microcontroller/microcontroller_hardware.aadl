@@ -4,12 +4,12 @@ public
 	with SEI;
 	with Buses;
 	
-processor STM32
+processor ESP32
 	features
 		ahb : requires bus access Buses::AHB;
 	properties
 		SEI::MIPSCapacity => 1.2 mips;
-end STM32;
+end ESP32;
 
 -------------------- MEMORY --------------------------
 

@@ -17,15 +17,18 @@ public
 	system Server_System
 		features
 			measured_data_in : in data port MeasuredData;
+			api_data_out : out data port ProcessedData;
 			wifi : requires bus access Buses::WiFi;
 		flows
 			mqtt_sink : flow sink measured_data_in;
+			api_src : flow source api_data_out;
 	end Server_System;
 	
 	system implementation Server_System.impl
 		subcomponents
 			mqtt_process : process MainProcess.impl;
 			db_process : process  DataBaseProcess.impl;
+			api_process : process ApiProcess.impl;
 			
 			pcie : bus Buses::PCIe;
 			cpu : processor IntelXeon;
@@ -35,6 +38,8 @@ public
 		connections
 			C1 : port measured_data_in -> mqtt_process.data_in;
 			C2: port mqtt_process.data_out -> db_process.data_in;
+			C3: port db_process.data_out -> api_process.data_in;
+			C4: port api_process.data_out -> api_data_out;
 		
 			B1 : bus access pcie <-> cpu.pcie;
 			B2 : bus access pcie <-> ram.pcie;
@@ -42,13 +47,15 @@ public
 			
 		properties
 			Actual_Processor_Binding => (reference(cpu)) applies to mqtt_process,
-																	db_process;
+																	db_process,
+																	api_process;
 																	
 			Actual_Memory_Binding => (reference(ram), reference(hdd)) applies to cpu, 
 																	mqtt_process, 
 																	mqtt_process.ReceiveThread,
 																	mqtt_process.StoreThread, 
-																	db_process;
+																	db_process,
+																	api_process;
 			
 			
 			Actual_Connection_Binding => (reference(pcie)) applies to B1;

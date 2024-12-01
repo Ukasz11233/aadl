@@ -45,6 +45,7 @@ public
     process DataBaseProcess
     	features
     		data_in : in data port ProcessedData;
+    		data_out : out data port ProcessedData;
     	flows
     		F_sink : flow sink data_in;
     	properties
@@ -57,16 +58,41 @@ public
    			DataBaseThread : thread DBThread;
    		connections
    			CC4 : port data_in ->  DataBaseThread.data_in;
+   			CC5 : port DataBaseThread.data_out -> data_out;
    		properties
    			SEI::RAMBudget => 32.0 GByte;
 			SEI::MIPSBudget => 10.0 mips;
     end DataBaseProcess.impl;
+    
+    
+    process ApiProcess
+    	features
+    		data_in : in data port ProcessedData;
+    		data_out : out data port ProcessedData;
+--    	properties
+--    		SEI::RAMBudget => 32.0 GByte;
+--			SEI::MIPSBudget => 10.0 mips;
+    end ApiProcess;
+    
+    
+    
+   	process implementation ApiProcess.impl
+   		subcomponents
+   			ApiThr : thread ApiThread;
+   		connections
+   			CC6 : port data_in ->  ApiThr.data_in;
+   			CC7 : port ApiThr.data_out -> data_out;
+--   		properties
+--   			SEI::RAMBudget => 32.0 GByte;
+--			SEI::MIPSBudget => 10.0 mips;
+    end ApiProcess.impl;
     
     ------------ THREADS -------------------------
     
     thread DBThread
     	features
     		data_in : in data port ProcessedData;
+    		data_out : out data port ProcessedData;
     	flows
     		db_sink: flow sink data_in;
     end DBThread;
@@ -107,4 +133,12 @@ public
             Period => 50 ms;
         end StoreThread.impl;
 
+
+	thread ApiThread
+		features
+			data_in : in data port ProcessedData;
+    		data_out : out data port ProcessedData;
+	end ApiThread;
+	
+	
 end Server_Software;

@@ -6,6 +6,8 @@ public
 	with Server_System;
 	with Buses;
 	
+	with Ue;
+	
 	system MainSystem
 	end MainSystem;
 	
@@ -13,15 +15,17 @@ public
 		subcomponents
 			mikrokontroler : system Microcontroller_System.impl;
 			server : system Server_System::Server_System;
-			wifi : bus Buses::WiFi;		
+			ue : system Ue::User_Equipment_System;
+			wifi : bus Buses::WiFi;
 		connections
 			stm32_server: port mikrokontroler.measured_data_out -> server.measured_data_in;
-			
+			server_ue : port server.api_data_out -> ue.api_data_in;
 			wifi_server : bus access wifi <-> server.wifi;
 			wifi_stm32 : bus access wifi <-> mikrokontroler.wifi;
 				
 		flows
 			e2e_mqtt: end to end flow mikrokontroler.mqtt_src -> stm32_server -> server.mqtt_sink;
+			e2e_api : end to end flow server.api_src -> server_ue -> ue.api_sink;
 			
 		properties
 			Actual_Connection_Binding => (reference(wifi)) applies to wifi_server, wifi_stm32, mikrokontroler.measured_data_out;

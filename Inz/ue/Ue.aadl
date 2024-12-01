@@ -1,0 +1,12 @@
+package Ue
+public
+	with DataTypes;	
+	renames DataTypes::all;
+	
+	system User_Equipment_System
+		features
+			api_data_in : in data port ProcessedData;
+		flows
+			api_sink : flow sink api_data_in;	
+	end User_Equipment_System;
+end Ue;

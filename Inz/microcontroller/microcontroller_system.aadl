@@ -29,7 +29,7 @@ system implementation Microcontroller_System.impl
 		MainProcess : process MainProcess.with_thread;
 
 		-- hardware ---
-		STM32 : processor STM32;
+		ESP32 : processor ESP32;
 		Ahb_Bus : bus Buses::AHB;
 		Spi_Bus : bus Buses::SPI;
 		Flash_Mem : memory internalMemory.Flash;
@@ -44,7 +44,7 @@ system implementation Microcontroller_System.impl
 		C3 : port MainProcess.Led_Sig -> Led.turn_on_off;
 		C4 : port MainProcess.Measured_Data -> measured_data_out;
 		
-		B1 : bus access Ahb_Bus <-> STM32.ahb;
+		B1 : bus access Ahb_Bus <-> ESP32.ahb;
 		B2 : bus access Ahb_Bus <-> Flash_Mem.ahb;
 		B3 : bus access Ahb_Bus <-> Sram_Mem.ahb;
 		
@@ -65,12 +65,12 @@ system implementation Microcontroller_System.impl
 									C3 ->
 									Led.co2_sink;																					
 	properties
-		Actual_Processor_Binding => (reference(STM32)) applies to MainProcess.Buzzer_Thread;
-		Actual_Processor_Binding => (reference(STM32)) applies to MainProcess.Led_Thread;
-		Actual_Processor_Binding => (reference(STM32)) applies to MainProcess.Mqtt_Thread;
+		Actual_Processor_Binding => (reference(ESP32)) applies to MainProcess.Buzzer_Thread;
+		Actual_Processor_Binding => (reference(ESP32)) applies to MainProcess.Led_Thread;
+		Actual_Processor_Binding => (reference(ESP32)) applies to MainProcess.Mqtt_Thread;
 		
-		Actual_Memory_Binding => (reference(STM32)) applies to Flash_Mem;
-		Actual_Memory_Binding => (reference(STM32)) applies to Sram_Mem;	
+		Actual_Memory_Binding => (reference(ESP32)) applies to Flash_Mem;
+		Actual_Memory_Binding => (reference(ESP32)) applies to Sram_Mem;	
 		
 		Actual_Connection_Binding => (reference (Ahb_Bus)) applies to B1;
 		Actual_Connection_Binding => (reference(Ahb_Bus)) applies to B2;
